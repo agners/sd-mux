@@ -39,10 +39,10 @@
 #define DYPER2          (0x01 << 0x06)
 
 // USBMUX specific definitions
-#define UM_SOCKET_SEL	(0x01 << 0x00)
-#define UM_DEVICE_PWR	(0x01 << 0x01)
-#define UM_DUT_LED		(0x01 << 0x02)
-#define UM_GP_LED		(0x01 << 0x03)
+#define UM_SOCKET_SEL   (0x01 << 0x00)
+#define UM_DEVICE_PWR   (0x01 << 0x01)
+#define UM_DUT_LED      (0x01 << 0x02)
+#define UM_GP_LED       (0x01 << 0x03)
 
 
 #define DELAY_100MS     100000
@@ -78,7 +78,7 @@ enum Target {
 enum CCDeviceType {
     CCDT_SDMUX,
     CCDT_SDWIRE,
-	CCDT_USBMUX,
+    CCDT_USBMUX,
     CCDT_MAX
 };
 
@@ -130,7 +130,7 @@ bool hasFeature(CCDeviceType deviceType, CCFeature feature) {
     static const bool featureMatrix[CCDT_MAX][CCF_MAX] = {
             {true, true, true, true},           // SD-MUX features
             {true, false, false, false},        // SDWire features
-			{false, false, true, false},        // SDWire features
+            {false, false, true, false},        // USB-MUX features
     };
 
     if (deviceType >= CCDT_MAX || feature >= CCF_MAX)
@@ -581,7 +581,7 @@ int setPins(unsigned char pins, CCOptionValue options[]) {
 }
 
 int showStatus(CCOptionValue options[]) {
-	int ret = 0;
+    int ret = 0;
     unsigned char pins;
     CCDeviceType deviceType;
     struct ftdi_context *ftdi = prepareDevice(options, &pins, &deviceType);
