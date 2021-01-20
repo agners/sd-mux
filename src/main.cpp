@@ -90,6 +90,13 @@ enum CCFeature {
     CCF_MAX
 };
 
+struct CCDeviceInfo {
+    int vendor_id;
+    int product_id;
+    const char *manufacturer;
+    bool features[CCF_MAX];
+};
+
 enum CCOption {
     CCO_DeviceId,
     CCO_DeviceSerial,
@@ -110,6 +117,27 @@ union CCOptionValue {
 int doPower(bool off, bool on, CCOptionValue options[]);
 int selectTarget(Target target, CCOptionValue options[]);
 
+static const struct CCDeviceInfo devices[CCDT_MAX] = {
+    [CCDT_SDMUX] = {
+        .vendor_id = SAMSUNG_VENDOR,
+        .product_id = PRODUCT,
+        .manufacturer = "SRPOL",
+        .features = {true, true, true, true},
+    },
+    [CCDT_SDWIRE] = {
+        .vendor_id = SAMSUNG_VENDOR,
+        .product_id = PRODUCT,
+        .manufacturer = "SRPOL",
+        .features = {true, false, false, false},
+    },
+    [CCDT_USBMUX] = {
+        .vendor_id = SAMSUNG_VENDOR,
+        .product_id = PRODUCT,
+        .manufacturer = "SRPOL",
+        .features = {false, false, true, false},
+    },
+};
+
 CCDeviceType getDeviceTypeFromString(char *deviceTypeStr) {
     if (strcmp(CCDT_SDMUX_STR, deviceTypeStr) == 0) {
         return CCDT_SDMUX;
@@ -127,16 +155,10 @@ CCDeviceType getDeviceTypeFromString(char *deviceTypeStr) {
 }
 
 bool hasFeature(CCDeviceType deviceType, CCFeature feature) {
-    static const bool featureMatrix[CCDT_MAX][CCF_MAX] = {
-            {true, true, true, true},           // SD-MUX features
-            {true, false, false, false},        // SDWire features
-            {false, false, true, false},        // USB-MUX features
-    };
-
     if (deviceType >= CCDT_MAX || feature >= CCF_MAX)
         return false;
 
-    return featureMatrix[deviceType][feature];
+    return devices[deviceType].features[feature];
 }
 
 int listDevices(CCOptionValue options[]) {
@@ -281,6 +303,7 @@ int setSerial(char *serialNumber, CCOptionValue options[]) {
     int f, ret = EXIT_FAILURE;
     char *type = options[CCO_DeviceType].args;
     CCDeviceType deviceType;
+    const CCDeviceInfo *deviceInfo;
 
     if (!type) {
         fprintf(stderr, "Device type not specified\n");
@@ -293,24 +316,26 @@ int setSerial(char *serialNumber, CCOptionValue options[]) {
         return EXIT_FAILURE;
     }
 
+    deviceInfo = &devices[deviceType];
+
     ftdi = openDevice(options, NULL);
     if (ftdi == NULL) {
         return EXIT_FAILURE;
     }
 
-    f = ftdi_eeprom_initdefaults(ftdi, (char *)"SRPOL", type, serialNumber);
+    f = ftdi_eeprom_initdefaults(ftdi, (char *)deviceInfo->manufacturer, type, serialNumber);
     if (f < 0) {
         fprintf(stderr, "Unable to set eeprom strings: %d (%s)\n", f, ftdi_get_error_string(ftdi));
         goto finish_him;
     }
 
-    f = ftdi_set_eeprom_value(ftdi, VENDOR_ID, SAMSUNG_VENDOR);
+    f = ftdi_set_eeprom_value(ftdi, VENDOR_ID, deviceInfo->vendor_id);
     if (f < 0) {
         fprintf(stderr, "Unable to set eeprom strings: %d (%s)\n", f, ftdi_get_error_string(ftdi));
         goto finish_him;
     }
 
-    f = ftdi_set_eeprom_value(ftdi, PRODUCT_ID, PRODUCT);
+    f = ftdi_set_eeprom_value(ftdi, PRODUCT_ID, deviceInfo->product_id);
     if (f < 0) {
         fprintf(stderr, "Unable to set eeprom strings: %d (%s)\n", f, ftdi_get_error_string(ftdi));
         goto finish_him;
