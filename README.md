@@ -23,5 +23,9 @@ With that you should be able to switch between DUT (device under test) and TS
 (test system) mode:
 ```
 $ sudo sd-mux-ctrl --device-serial=SDRW00004 --vendor=0x0403 --product=0x6015 --dut
-$ sudo sd-mux-ctrl --device-serial=SDRW00004 --vendor=0x0403 --product=0x6015 --ts 
+$ sudo sd-mux-ctrl --device-serial=SDRW00004 --vendor=0x0403 --product=0x6015 --ts
 ```
+
+Note: Since `sd-mux-ctrl` needs full device access using `sd-mux-ctrl` does not
+allow you to use the USB to UART tty at the same time. This fork is meant as a
+stop-gap/migration solution.
