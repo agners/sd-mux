@@ -51,6 +51,7 @@
 #define CCDT_SDMUX_STR  "sd-mux"
 #define CCDT_SDWIRE_STR "sd-wire"
 #define CCDT_USBMUX_STR "usb-mux"
+#define CCDT_SDREWIRE_STR "sd-re-wire"
 
 #define STRING_SIZE     128
 
@@ -79,6 +80,7 @@ enum CCDeviceType {
     CCDT_SDMUX,
     CCDT_SDWIRE,
     CCDT_USBMUX,
+    CCDT_SDREWIRE,
     CCDT_MAX
 };
 
@@ -136,6 +138,12 @@ static const struct CCDeviceInfo devices[CCDT_MAX] = {
         .manufacturer = "SRPOL",
         .features = {false, false, true, false},
     },
+    [CCDT_SDREWIRE] = {
+        .vendor_id = 0x0403,
+        .product_id = 0x6015,
+        .manufacturer = "SliwaIO",
+        .features = {true, false, false, false},
+    },
 };
 
 CCDeviceType getDeviceTypeFromString(char *deviceTypeStr) {
@@ -149,6 +157,10 @@ CCDeviceType getDeviceTypeFromString(char *deviceTypeStr) {
 
     if (strcmp(CCDT_USBMUX_STR, deviceTypeStr) == 0) {
         return CCDT_USBMUX;
+    }
+
+    if (strcmp(CCDT_SDREWIRE_STR, deviceTypeStr) == 0) {
+        return CCDT_SDREWIRE;
     }
 
     return CCDT_MAX;
@@ -523,11 +535,18 @@ int selectTarget(Target target, CCOptionValue options[]) {
     if (ftdi == NULL)
         return EXIT_FAILURE;
 
-    if (deviceType == CCDT_SDWIRE) {
+    if (deviceType == CCDT_SDWIRE || deviceType == CCDT_SDREWIRE) {
         unsigned char pinState = 0x00;
-        pinState |= 0xF0; // Upper half of the byte sets all pins to output (SDWire has only one bit - 0)
-        pinState |= target == T_DUT ? 0x00 : 0x01; // Lower half of the byte sets state of output pins.
-                                                   // In this particular case we care only of bit 0.
+
+	if (deviceType == CCDT_SDWIRE) {
+            pinState |= 0xF0; // Upper half of the byte sets all pins to output (SDWire has only one bit - 0)
+            pinState |= target == T_DUT ? 0x00 : 0x01; // Lower half of the byte sets state of output pins.
+                                                       // In this particular case we care only of bit 0.
+        } else {
+            pinState |= 0x80; // Set only CBUS3 to output
+            pinState |= target == T_DUT ? 0x00 : 0x08; // Lower half of the byte sets state of output pins.
+        }
+
         ret |= ftdi_set_bitmode(ftdi, pinState, BITMODE_CBUS);
         goto finish_him;
     }
