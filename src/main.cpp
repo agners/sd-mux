@@ -361,7 +361,7 @@ int setSerial(char *serialNumber, CCOptionValue options[]) {
         }
     }
 
-    if (deviceType == CCDT_USBMUX) {
+    if (deviceType == CCDT_USBMUX || deviceType == CCDT_SDREWIRE) {
         f = ftdi_set_eeprom_value(ftdi, CBUS_FUNCTION_0, CBUSH_IOMODE);
         if (f < 0) {
             fprintf(stderr, "Unable to set eeprom value: %d (%s)\n", f, ftdi_get_error_string(ftdi));
