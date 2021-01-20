@@ -280,9 +280,16 @@ int setSerial(char *serialNumber, CCOptionValue options[]) {
     struct ftdi_context *ftdi;
     int f, ret = EXIT_FAILURE;
     char *type = options[CCO_DeviceType].args;
+    CCDeviceType deviceType;
 
     if (!type) {
         fprintf(stderr, "Device type not specified\n");
+        return EXIT_FAILURE;
+    }
+
+    deviceType = getDeviceTypeFromString(type);
+    if (deviceType >= CCDT_MAX) {
+        fprintf(stderr, "Device type invalid\n");
         return EXIT_FAILURE;
     }
 
@@ -309,7 +316,7 @@ int setSerial(char *serialNumber, CCOptionValue options[]) {
         goto finish_him;
     }
 
-    if (getDeviceTypeFromString(type) == CCDT_SDWIRE) {
+    if (deviceType == CCDT_SDWIRE) {
         f = ftdi_set_eeprom_value(ftdi, CBUS_FUNCTION_0, CBUSH_IOMODE);
         if (f < 0) {
             fprintf(stderr, "Unable to set eeprom value: %d (%s)\n", f, ftdi_get_error_string(ftdi));
@@ -317,7 +324,7 @@ int setSerial(char *serialNumber, CCOptionValue options[]) {
         }
     }
 
-    if (getDeviceTypeFromString(type) == CCDT_USBMUX) {
+    if (deviceType == CCDT_USBMUX) {
         f = ftdi_set_eeprom_value(ftdi, CBUS_FUNCTION_0, CBUSH_IOMODE);
         if (f < 0) {
             fprintf(stderr, "Unable to set eeprom value: %d (%s)\n", f, ftdi_get_error_string(ftdi));
